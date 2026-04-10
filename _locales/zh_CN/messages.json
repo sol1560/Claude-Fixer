@@ -1,0 +1,117 @@
+{
+  "extName": {
+    "message": "Claude Fixer"
+  },
+  "extDescription": {
+    "message": "在 claude.ai 上恢复衬线字体，并自动修复 Extended Thinking 被发送消息后悄悄关掉的 bug。"
+  },
+  "popupTitle": {
+    "message": "Claude Fixer"
+  },
+
+  "fontFixLabel": {
+    "message": "字体修复"
+  },
+  "fontModeAnthropic": {
+    "message": "Anthropic Serif（推荐）"
+  },
+  "fontModeGreetingOnly": {
+    "message": "仅问候语（不动正文）"
+  },
+  "fontModeLocal": {
+    "message": "本地文件（Tiempos Text）"
+  },
+  "fontModeOnline": {
+    "message": "在线（Source Serif 4）"
+  },
+
+  "importZipLabel": {
+    "message": "一键导入 Tiempos Text .zip"
+  },
+  "importZipHint": {
+    "message": "一次导入全部 8 种样式。或者展开下方按字重单独上传。"
+  },
+  "perSlotSummary": {
+    "message": "按字重上传 / 清除"
+  },
+  "perSlotHint": {
+    "message": "至少上传 Regular 和 Bold 即可使用，其余字重会自动 fallback。"
+  },
+  "clearFontsBtn": {
+    "message": "清除全部字体"
+  },
+
+  "modelAutoFixLabel": {
+    "message": "自动修复 Extended Thinking"
+  },
+  "modelAutoFixHint": {
+    "message": "即使 claude.ai 在发送消息时把 Opus 4.6 Extended Thinking 切回普通 Opus 4.6，也会立即点回去。"
+  },
+
+  "uiTranslateLabel": {
+    "message": "界面翻译为中文"
+  },
+  "uiTranslateHint": {
+    "message": "claude.ai 自带的语言选项里没有简体中文。这个开关会根据本地字典替换 UI 文本，对话内容永不改动。"
+  },
+  "uiTranslateDebugLabel": {
+    "message": "把未翻译的字符串打到控制台"
+  },
+
+  "slotRegular":        { "message": "Regular" },
+  "slotRegularItalic":  { "message": "Regular Italic" },
+  "slotMedium":         { "message": "Medium" },
+  "slotMediumItalic":   { "message": "Medium Italic" },
+  "slotSemibold":       { "message": "Semibold" },
+  "slotSemiboldItalic": { "message": "Semibold Italic" },
+  "slotBold":           { "message": "Bold" },
+  "slotBoldItalic":     { "message": "Bold Italic" },
+
+  "slotUploaded": { "message": "✓ 已上传" },
+  "slotNotSet":   { "message": "未设置" },
+
+  "statusOn":  { "message": "开" },
+  "statusOff": { "message": "关" },
+  "statusFontLabel":  { "message": "字体" },
+  "statusModelLabel": { "message": "模型修复" },
+  "statusFormat": {
+    "message": "$FONT_LABEL$：$FONT_STATE$（$MODE$） · $MODEL_LABEL$：$MODEL_STATE$",
+    "placeholders": {
+      "font_label":  { "content": "$1" },
+      "font_state":  { "content": "$2" },
+      "mode":        { "content": "$3" },
+      "model_label": { "content": "$4" },
+      "model_state": { "content": "$5" }
+    }
+  },
+
+  "modeLabelAnthropic": { "message": "Anthropic Serif" },
+  "modeLabelLocal": {
+    "message": "本地 $COUNT$/$TOTAL$",
+    "placeholders": {
+      "count": { "content": "$1" },
+      "total": { "content": "$2" }
+    }
+  },
+  "modeLabelOnline": { "message": "在线" },
+
+  "extracting": { "message": "正在解压…" },
+  "imported": {
+    "message": "已导入 $COUNT$ 个字体。",
+    "placeholders": {
+      "count": { "content": "$1", "example": "8" }
+    }
+  },
+  "importFailed": {
+    "message": "导入失败：$REASON$",
+    "placeholders": {
+      "reason": { "content": "$1" }
+    }
+  },
+  "fontReadFailed": {
+    "message": "读取字体文件失败：$REASON$",
+    "placeholders": {
+      "reason": { "content": "$1" }
+    }
+  }
+}

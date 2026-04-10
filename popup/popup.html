@@ -1,0 +1,88 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title data-i18n="popupTitle">Claude Fixer</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <h1 data-i18n="popupTitle">Claude Fixer</h1>
+  </header>
+
+  <section class="card">
+    <label class="row toggle">
+      <input type="checkbox" id="fontFix">
+      <span class="label" data-i18n="fontFixLabel">Font fix</span>
+    </label>
+
+    <fieldset id="fontModeGroup" class="indent">
+      <label class="row">
+        <input type="radio" name="fontMode" value="anthropic-serif" id="modeAnthropic">
+        <span data-i18n="fontModeAnthropic">Anthropic Serif (recommended)</span>
+      </label>
+      <label class="row">
+        <input type="radio" name="fontMode" value="greeting-only" id="modeGreetingOnly">
+        <span data-i18n="fontModeGreetingOnly">Greeting only (subtle)</span>
+      </label>
+      <label class="row">
+        <input type="radio" name="fontMode" value="local" id="modeLocal">
+        <span data-i18n="fontModeLocal">Local files (Tiempos Text)</span>
+      </label>
+      <label class="row">
+        <input type="radio" name="fontMode" value="online" id="modeOnline">
+        <span data-i18n="fontModeOnline">Online (Source Serif 4)</span>
+      </label>
+    </fieldset>
+
+    <div class="indent">
+      <label for="zipImport" class="primary-btn" data-i18n="importZipLabel">
+        Import Tiempos Text .zip (one-click)
+      </label>
+      <input type="file" id="zipImport" accept=".zip,application/zip">
+      <p class="hint" id="zipHint" data-i18n="importZipHint">Picks all 8 styles in one go. Or expand below for per-slot upload.</p>
+    </div>
+
+    <details class="indent" id="uploadDetails">
+      <summary data-i18n="perSlotSummary">Per-slot upload / clear</summary>
+      <p class="hint" data-i18n="perSlotHint">At minimum upload Regular and Bold. Other slots fall back gracefully.</p>
+      <div id="slots"></div>
+      <button type="button" id="clearFonts" class="danger" data-i18n="clearFontsBtn">Clear all fonts</button>
+    </details>
+  </section>
+
+  <section class="card">
+    <label class="row toggle">
+      <input type="checkbox" id="modelAutoFix">
+      <span class="label" data-i18n="modelAutoFixLabel">Auto-fix Extended Thinking</span>
+    </label>
+    <p class="hint indent" data-i18n="modelAutoFixHint">
+      Keeps Opus 4.6 Extended Thinking selected even when claude.ai
+      tries to revert to plain Opus 4.6 on send.
+    </p>
+  </section>
+
+  <section class="card">
+    <label class="row toggle">
+      <input type="checkbox" id="uiTranslate">
+      <span class="label" data-i18n="uiTranslateLabel">Translate UI to 中文</span>
+    </label>
+    <p class="hint indent" data-i18n="uiTranslateHint">
+      claude.ai's official language picker doesn't include Simplified
+      Chinese — this toggles a dictionary-based translator. Chat
+      content is never touched.
+    </p>
+    <label class="row indent" style="margin-top:4px">
+      <input type="checkbox" id="uiTranslateDebug">
+      <span class="hint" data-i18n="uiTranslateDebugLabel">Log untranslated strings to console</span>
+    </label>
+  </section>
+
+  <footer>
+    <span id="status">…</span>
+  </footer>
+
+  <script src="../src/storage.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

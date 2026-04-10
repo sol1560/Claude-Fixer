@@ -1,0 +1,119 @@
+{
+  "extName": {
+    "message": "Claude Fixer",
+    "description": "Extension name"
+  },
+  "extDescription": {
+    "message": "Restore the serif font on claude.ai and auto-fix Extended Thinking model reset.",
+    "description": "Extension description shown in chrome://extensions"
+  },
+  "popupTitle": {
+    "message": "Claude Fixer"
+  },
+
+  "fontFixLabel": {
+    "message": "Font fix"
+  },
+  "fontModeAnthropic": {
+    "message": "Anthropic Serif (recommended)"
+  },
+  "fontModeGreetingOnly": {
+    "message": "Greeting only (subtle)"
+  },
+  "fontModeLocal": {
+    "message": "Local files (Tiempos Text)"
+  },
+  "fontModeOnline": {
+    "message": "Online (Source Serif 4)"
+  },
+
+  "importZipLabel": {
+    "message": "Import Tiempos Text .zip (one-click)"
+  },
+  "importZipHint": {
+    "message": "Picks all 8 styles in one go. Or expand below for per-slot upload."
+  },
+  "perSlotSummary": {
+    "message": "Per-slot upload / clear"
+  },
+  "perSlotHint": {
+    "message": "At minimum upload Regular and Bold. Other slots fall back gracefully."
+  },
+  "clearFontsBtn": {
+    "message": "Clear all fonts"
+  },
+
+  "modelAutoFixLabel": {
+    "message": "Auto-fix Extended Thinking"
+  },
+  "modelAutoFixHint": {
+    "message": "Keeps Opus 4.6 Extended Thinking selected even when claude.ai tries to revert to plain Opus 4.6 on send."
+  },
+
+  "uiTranslateLabel": {
+    "message": "Translate UI to 中文"
+  },
+  "uiTranslateHint": {
+    "message": "claude.ai's official language picker doesn't include Simplified Chinese — this toggles a dictionary-based translator. Chat content is never touched."
+  },
+  "uiTranslateDebugLabel": {
+    "message": "Log untranslated strings to console"
+  },
+
+  "slotRegular":        { "message": "Regular" },
+  "slotRegularItalic":  { "message": "Regular Italic" },
+  "slotMedium":         { "message": "Medium" },
+  "slotMediumItalic":   { "message": "Medium Italic" },
+  "slotSemibold":       { "message": "Semibold" },
+  "slotSemiboldItalic": { "message": "Semibold Italic" },
+  "slotBold":           { "message": "Bold" },
+  "slotBoldItalic":     { "message": "Bold Italic" },
+
+  "slotUploaded": { "message": "✓ uploaded" },
+  "slotNotSet":   { "message": "not set" },
+
+  "statusOn":  { "message": "on" },
+  "statusOff": { "message": "off" },
+  "statusFontLabel":  { "message": "font" },
+  "statusModelLabel": { "message": "model fix" },
+  "statusFormat": {
+    "message": "$FONT_LABEL$: $FONT_STATE$ ($MODE$) · $MODEL_LABEL$: $MODEL_STATE$",
+    "placeholders": {
+      "font_label":  { "content": "$1" },
+      "font_state":  { "content": "$2" },
+      "mode":        { "content": "$3" },
+      "model_label": { "content": "$4" },
+      "model_state": { "content": "$5" }
+    }
+  },
+
+  "modeLabelAnthropic": { "message": "anthropic-serif" },
+  "modeLabelLocal": {
+    "message": "local $COUNT$/$TOTAL$",
+    "placeholders": {
+      "count": { "content": "$1" },
+      "total": { "content": "$2" }
+    }
+  },
+  "modeLabelOnline": { "message": "online" },
+
+  "extracting": { "message": "Extracting…" },
+  "imported": {
+    "message": "Imported $COUNT$ fonts.",
+    "placeholders": {
+      "count": { "content": "$1", "example": "8" }
+    }
+  },
+  "importFailed": {
+    "message": "Import failed: $REASON$",
+    "placeholders": {
+      "reason": { "content": "$1" }
+    }
+  },
+  "fontReadFailed": {
+    "message": "Failed to read font file: $REASON$",
+    "placeholders": {
+      "reason": { "content": "$1" }
+    }
+  }
+}
