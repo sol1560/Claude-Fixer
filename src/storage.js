@@ -39,12 +39,21 @@
     //   font claude.ai still loads for response text). No upload needed.
     // 'local'  — use the user's uploaded Tiempos Text .otf files.
     // 'online' — load Source Serif 4 from Google Fonts as a fallback.
+    // 'greeting-only' — only the .font-display heading gets serif.
     fontMode: 'anthropic-serif',
     // Off by default — only people who want a Chinese UI should opt in.
     uiTranslate: false,
     // Set to true to log untranslated UI strings to the DevTools
     // console (useful for growing src/i18n-zh.js's dictionary).
-    uiTranslateDebug: false
+    uiTranslateDebug: false,
+    // Prevent the "last reply got swallowed" race: block send events
+    // for a short cooldown after Claude finishes streaming a response.
+    sendRaceProtection: true,
+    // Cooldown length in milliseconds.
+    sendRaceProtectionMs: 800,
+    // Thinking effort override.
+    // 'default' = don't touch; otherwise a number (budget_tokens).
+    thinkingEffort: 'default'
   };
 
   function getSettings() {

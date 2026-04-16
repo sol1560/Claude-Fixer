@@ -48,6 +48,25 @@
     "message": "即使 claude.ai 在发送消息时把 Opus 4.6 Extended Thinking 切回普通 Opus 4.6，也会立即点回去。"
   },
 
+  "sendRaceProtectionLabel": {
+    "message": "防止最后一条回复被吞"
+  },
+  "sendRaceProtectionHint": {
+    "message": "Claude 流式回复结束后的 800 毫秒内暂时屏蔽发送，避免你紧接着发新消息时上一条助手回复被竞态覆盖。"
+  },
+
+  "thinkingEffortLabel": {
+    "message": "思考强度"
+  },
+  "thinkingEffortHint": {
+    "message": "覆盖 Extended Thinking 的思考预算（budget_tokens）。仅在选中 Extended Thinking 时影响发送的消息。「默认」不修改原始请求。"
+  },
+  "effortDefault": { "message": "默认" },
+  "effortLow":     { "message": "低（2K）" },
+  "effortMedium":  { "message": "中（10K）" },
+  "effortHigh":    { "message": "高（40K）" },
+  "effortMax":     { "message": "最大（128K）" },
+
   "uiTranslateLabel": {
     "message": "界面翻译为中文"
   },

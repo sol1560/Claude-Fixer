@@ -92,6 +92,9 @@
 
     // -- Composer toolbar / input area --
     "Reply to Claude...":             "回复 Claude...",
+    "Reply...": "回复…",
+    "Reply…": "回复…",
+    "Reply to Claude…": "回复 Claude…",
     "How can I help you today?":      "今天我能帮你什么？",
     "Message Claude…":                "发消息给 Claude…",
     "Add files, connectors, and more":"添加文件、连接器等",
@@ -531,6 +534,23 @@
     "Auto-reload": "自动充值",
     "Automatically buy more extra usage when your balance is low": "余额不足时自动购买更多额外用量",
 
+    // Round 5 additions (greetings + input hints)
+    "Coffee and claude time?": "咖啡配 Claude 时间？",
+    "Coffee and Claude time?": "咖啡配 Claude 时间？",
+    "Type / for skills": "输入 / 调用技能",
+    "Type / for skills…": "输入 / 调用技能…",
+    "Type / for skills...": "输入 / 调用技能…",
+
+    // Night owl specials — dict wins over greeting patterns
+    "Hello, Night owl": "你好，夜猫子",
+    "Hey there, Night owl": "嗨，夜猫子",
+    "Hey, Night owl": "嗨，夜猫子",
+    "Hi, Night owl": "你好，夜猫子",
+    "Good evening, Night owl": "晚上好，夜猫子",
+    "Good night, Night owl": "晚安，夜猫子",
+    "Welcome back, Night owl": "欢迎回来，夜猫子",
+    "Back at it, Night owl": "又开始了，夜猫子",
+
     // ============================================================
     // Round 2 additions (2026-04-10)
     // ============================================================
@@ -639,13 +659,32 @@
   // TRANSLATOR
   // ============================================================
 
-  const SKIP_SELECTORS = [
+  // Text-node skip zone: never touch text inside user-editable or
+  // user/claude content containers, or inside code.
+  const TEXT_SKIP_SELECTORS = [
     '[data-testid="user-message"]',
     '.font-claude-response',
     '.font-user-message',
     '[contenteditable="true"]',
     'textarea',
     'input',
+    'code',
+    'pre',
+    'kbd',
+    'samp',
+    'script',
+    'style',
+    'noscript',
+  ];
+
+  // Attribute skip zone: a much smaller list. Form elements' placeholder
+  // / aria-label / title attributes ARE translatable even though their
+  // text children would be user content. Only code and conversation
+  // content containers are excluded.
+  const ATTR_SKIP_SELECTORS = [
+    '[data-testid="user-message"]',
+    '.font-claude-response',
+    '.font-user-message',
     'code',
     'pre',
     'kbd',
@@ -657,17 +696,17 @@
 
   // Cached "is in skip zone?" lookup so we don't walk the DOM each time.
   // Cleared whenever we re-walk the whole tree.
-  let skipCache = new WeakMap();
+  let textSkipCache = new WeakMap();
 
-  function isInSkipZone(node) {
+  function isInTextSkipZone(node) {
     let el = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
     while (el && el.nodeType === Node.ELEMENT_NODE) {
-      if (skipCache.has(el)) return skipCache.get(el);
-      for (const sel of SKIP_SELECTORS) {
+      if (textSkipCache.has(el)) return textSkipCache.get(el);
+      for (const sel of TEXT_SKIP_SELECTORS) {
         let match = false;
-        try { match = el.matches(sel); } catch (_) { /* invalid sel for this engine */ }
+        try { match = el.matches(sel); } catch (_) { /* invalid sel */ }
         if (match) {
-          skipCache.set(el, true);
+          textSkipCache.set(el, true);
           return true;
         }
       }
@@ -676,11 +715,71 @@
     return false;
   }
 
+  function isInAttrSkipZone(el) {
+    let e = el;
+    while (e && e.nodeType === Node.ELEMENT_NODE) {
+      for (const sel of ATTR_SKIP_SELECTORS) {
+        let match = false;
+        try { match = e.matches(sel); } catch (_) { /* invalid sel */ }
+        if (match) return true;
+      }
+      e = e.parentElement;
+    }
+    return false;
+  }
+
+  // Regex patterns for dynamic strings that include variable parts
+  // (e.g. greetings with the user's name). Tried AFTER dict lookup, so
+  // exact dict entries still take precedence. Patterns run on .trim()'d
+  // text; $1..$9 in the template are replaced with capture groups.
+  //
+  // Be specific with anchors / character classes — a too-loose pattern
+  // risks false positives on conversation content (skip-zone usually
+  // saves us, but keep patterns tight anyway).
+  const PATTERNS = [
+    // Greetings — the home page greeting line rotates between many
+    // variants, each ending with the user's display name.
+    { re: /^Good morning,\s*(.+)$/i,          t: '早上好，$1' },
+    { re: /^Good afternoon,\s*(.+)$/i,        t: '下午好，$1' },
+    { re: /^Good evening,\s*(.+)$/i,          t: '晚上好，$1' },
+    { re: /^Good night,\s*(.+)$/i,            t: '晚安，$1' },
+    { re: /^Morning,\s*(.+)$/i,               t: '早上好，$1' },
+    { re: /^Afternoon,\s*(.+)$/i,             t: '下午好，$1' },
+    { re: /^Evening,\s*(.+)$/i,               t: '晚上好，$1' },
+    { re: /^Hey there,\s*(.+)$/i,             t: '嗨，$1' },
+    { re: /^Hey,\s*(.+)$/i,                   t: '嗨，$1' },
+    { re: /^Hello,\s*(.+)$/i,                 t: '你好，$1' },
+    { re: /^Hi,\s*(.+)$/i,                    t: '你好，$1' },
+    { re: /^Welcome back,\s*(.+)$/i,          t: '欢迎回来，$1' },
+    { re: /^Back at it,\s*(.+)$/i,            t: '又开始了，$1' },
+    { re: /^What's new,\s*([^?]+)\??$/i,      t: '最近怎么样，$1？' },
+    { re: /^What\u2019s new,\s*([^?]+)\??$/i, t: '最近怎么样，$1？' },
+    { re: /^How was your day,\s*([^?]+)\??$/i, t: '今天过得怎么样，$1？' },
+    { re: /^How's it going,\s*([^?]+)\??$/i,  t: '最近好吗，$1？' },
+    { re: /^Ready to continue,\s*([^?]+)\??$/i, t: '准备继续了吗，$1？' },
+    { re: /^Hi\s+(\S+),\s*how are you\??$/i,  t: '嗨 $1，最近怎么样？' },
+    { re: /^([A-Za-z][\w\s]*) Returns!$/,     t: '$1 回来了！' },
+  ];
+
   function translateString(text) {
     if (!text) return null;
     const trimmed = text.trim();
     if (!trimmed) return null;
-    const zh = DICT[trimmed];
+
+    // 1. Exact dict lookup.
+    let zh = DICT[trimmed];
+
+    // 2. Regex pattern fallback (greetings with user names, etc.).
+    if (zh === undefined) {
+      for (const p of PATTERNS) {
+        const m = trimmed.match(p.re);
+        if (m) {
+          zh = p.t.replace(/\$(\d)/g, (_, n) => m[Number(n)] || '');
+          break;
+        }
+      }
+    }
+
     // Note: empty string ("") is a valid translation — used to make a
     // text fragment vanish so neighbouring already-translated fragments
     // form a coherent Chinese sentence (e.g. "What" before a translated
@@ -712,7 +811,7 @@
 
   function translateTextNode(node) {
     if (node.__cfTranslated) return;
-    if (isInSkipZone(node)) return;
+    if (isInTextSkipZone(node)) return;
     const orig = node.textContent;
     const translated = translateString(orig);
     if (translated !== null) {
@@ -725,7 +824,7 @@
   }
 
   function translateElementAttrs(el) {
-    if (isInSkipZone(el)) return;
+    if (isInAttrSkipZone(el)) return;
     for (const attr of ATTR_NAMES) {
       if (!el.hasAttribute(attr)) continue;
       const orig = el.getAttribute(attr);
@@ -750,27 +849,29 @@
       return;
     }
     if (root.nodeType !== Node.ELEMENT_NODE) return;
-    if (isInSkipZone(root)) return;
 
-    // Translate this element's own attributes
+    // Translate attributes on this element (unless conversation content)
     translateElementAttrs(root);
-
-    // Walk text nodes
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-      acceptNode(n) {
-        if (isInSkipZone(n)) return NodeFilter.FILTER_REJECT;
-        return NodeFilter.FILTER_ACCEPT;
-      }
-    });
-    let node;
-    while ((node = walker.nextNode())) translateTextNode(node);
-
-    // Walk descendant elements with translatable attributes
+    // Also attributes on descendants — querySelectorAll traverses into
+    // any element, form elements included.
     for (const attr of ATTR_NAMES) {
       let nodes;
       try { nodes = root.querySelectorAll('[' + attr + ']'); } catch (_) { continue; }
       for (const el of nodes) translateElementAttrs(el);
     }
+
+    // Text walking stops at text-skip zones
+    if (isInTextSkipZone(root)) return;
+
+    // Walk text nodes
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(n) {
+        if (isInTextSkipZone(n)) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    let node;
+    while ((node = walker.nextNode())) translateTextNode(node);
   }
 
   // ============================================================
@@ -804,7 +905,7 @@
     if (started) return;
     started = true;
     logUntranslated = !!(opts && opts.logUntranslated);
-    skipCache = new WeakMap();
+    textSkipCache = new WeakMap();
     walkAndTranslate(document.body || document.documentElement);
     observer = new MutationObserver(onMutations);
     observer.observe(document.body || document.documentElement, {
@@ -835,7 +936,7 @@
     // still equals stamp, revert by removing — but we don't have the
     // original. Best we can do is leave them; toggling the setting and
     // refreshing the page is the clean revert path.)
-    skipCache = new WeakMap();
+    textSkipCache = new WeakMap();
     console.log(TAG, 'translator stopped (page refresh recommended for full revert)');
   }
 

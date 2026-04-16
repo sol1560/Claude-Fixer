@@ -1,17 +1,16 @@
 // Content script. Runs at document_start in the ISOLATED world.
 //
-// Two jobs:
+// Jobs:
 //   1. Font fix — inject @font-face + override CSS, watch <head> for SPA
 //      re-renders, run a probe so DevTools always has the current state.
 //   2. Model guard — detect when claude.ai silently flips Opus 4.6
 //      Extended Thinking back to plain Opus 4.6 after sending a message,
 //      and re-click the menu item to put it back.
-//
-// The model guard is purely DOM-side. The first message after the user
-// turns on Extended Thinking *is* sent with thinking enabled (verified
-// by the user); only the local UI state for the model selector resets.
-// So watching the dropdown's textContent and re-clicking the menu item
-// is enough — no need to touch fetch/payloads.
+//   3. Send race protection — briefly block sends right after Claude
+//      finishes streaming to prevent the "swallowed last reply" bug.
+//   4. Thinking effort override — inject a MAIN-world script that
+//      intercepts fetch and patches budget_tokens in the request body.
+//   5. Translate UI to Chinese — dictionary-based DOM text translator.
 
 (function () {
   const TAG = '[Claude Fixer]';
@@ -23,9 +22,51 @@
   const CSS = window.ClaudeFixerCSS;
   const Probe = window.ClaudeFixerProbe;
   const Translator = window.ClaudeFixerTranslator;
+  const InPageUI = window.ClaudeFixerInPageUI;
 
   let cachedSettings = null;
   let cachedFonts = null;
+
+  // ============================================================
+  // MAIN-WORLD SCRIPT INJECTION (for fetch interception)
+  // ============================================================
+
+  let mainWorldInjected = false;
+
+  function injectPageScript() {
+    if (mainWorldInjected) return;
+    mainWorldInjected = true;
+    const root = document.head || document.documentElement;
+
+    const s = document.createElement('script');
+    s.src = chrome.runtime.getURL('src/injected.js');
+    s.onload = () => s.remove();
+    root.appendChild(s);
+  }
+
+  function postToPage(type, payload) {
+    window.postMessage({ source: 'claude-fixer-cs', type, ...payload }, '*');
+  }
+
+  // Budget presets: setting value -> budget_tokens.
+  const THINKING_BUDGETS = {
+    'default': 0,
+    'low':     2048,
+    'medium':  10000,
+    'high':    40000,
+    'max':     128000,
+    'ultra':   1000000
+  };
+
+  function applyThinkingEffort(settings) {
+    // Always inject the page script — even when budget is 0 ("Default")
+    // we still want it to log API payloads so the user can discover
+    // the real field names for thinking/budget in DevTools.
+    injectPageScript();
+    const level = settings.thinkingEffort || 'default';
+    const budget = THINKING_BUDGETS[level] || 0;
+    postToPage('setThinkingBudget', { budget });
+  }
 
   // ============================================================
   // FONT FIX
@@ -285,6 +326,129 @@
   }
 
   // ============================================================
+  // SEND RACE PROTECTION
+  // ============================================================
+  //
+  // Bug: in long conversations, if the user sends a new message very
+  // shortly after Claude finishes streaming a response, the last
+  // assistant message sometimes gets "swallowed" — presumably because
+  // claude.ai's client state hasn't yet committed the streamed message
+  // to the conversation list before the new user message races in and
+  // overwrites the pending slot.
+  //
+  // Fix: briefly block send events after we observe Claude's streaming
+  // container flip `data-is-streaming` from "true" to "false". Cooldown
+  // defaults to 800 ms, tunable via `sendRaceProtectionMs`.
+  //
+  // We block both:
+  //   - clicks on any <button> whose aria-label / data-testid mentions
+  //     "send"
+  //   - Enter keydown (without Shift) inside textarea / contenteditable
+  //     composer elements
+  //
+  // Blocked events are swallowed, not requeued — the user will notice
+  // their send didn't go through within the cooldown and just press
+  // again. Simpler and safer than faking events.
+
+  let srpStarted = false;
+  let srpObserver = null;
+  let lastStreamEndTs = 0;
+  let srpClickHandler = null;
+  let srpKeyHandler = null;
+
+  function srpInCooldown() {
+    if (!cachedSettings || !cachedSettings.sendRaceProtection) return false;
+    const cd = cachedSettings.sendRaceProtectionMs || 800;
+    return (Date.now() - lastStreamEndTs) < cd;
+  }
+
+  function onStreamMutation(mutations) {
+    for (const m of mutations) {
+      if (m.type !== 'attributes') continue;
+      if (m.attributeName !== 'data-is-streaming') continue;
+      const el = m.target;
+      if (!el || el.nodeType !== Node.ELEMENT_NODE) continue;
+      const val = el.getAttribute('data-is-streaming');
+      // Transition from "true" to "false" = Claude finished this message.
+      if (val === 'false' && m.oldValue === 'true') {
+        lastStreamEndTs = Date.now();
+        const cd = (cachedSettings && cachedSettings.sendRaceProtectionMs) || 800;
+        console.log(TAG, 'streaming ended, blocking sends for', cd, 'ms');
+      }
+    }
+  }
+
+  function isSendButton(btn) {
+    if (!btn) return false;
+    const label = (btn.getAttribute('aria-label') || '').toLowerCase();
+    if (/^send( message)?$/.test(label)) return true;
+    if (label.includes('send message')) return true;
+    const testid = (btn.getAttribute('data-testid') || '').toLowerCase();
+    if (testid.includes('send')) return true;
+    return false;
+  }
+
+  function startSendRaceProtection() {
+    if (srpStarted) return;
+    srpStarted = true;
+
+    // Observe data-is-streaming attribute anywhere under body.
+    srpObserver = new MutationObserver(onStreamMutation);
+    srpObserver.observe(document.body || document.documentElement, {
+      subtree: true,
+      attributes: true,
+      attributeOldValue: true,
+      attributeFilter: ['data-is-streaming']
+    });
+
+    // Capture-phase click interceptor.
+    srpClickHandler = (e) => {
+      if (!srpInCooldown()) return;
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      const btn = target.closest('button');
+      if (!btn || !isSendButton(btn)) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      console.log(TAG, 'blocked send click during streaming cooldown');
+    };
+    document.addEventListener('click', srpClickHandler, true);
+
+    // Capture-phase Enter interceptor (composer only).
+    srpKeyHandler = (e) => {
+      if (!srpInCooldown()) return;
+      if (e.key !== 'Enter') return;
+      if (e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) return;
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      const composer = target.closest('textarea, [contenteditable="true"]');
+      if (!composer) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      console.log(TAG, 'blocked send Enter during streaming cooldown');
+    };
+    document.addEventListener('keydown', srpKeyHandler, true);
+
+    console.log(TAG, 'send race protection started');
+  }
+
+  function stopSendRaceProtection() {
+    if (!srpStarted) return;
+    srpStarted = false;
+    if (srpObserver) { srpObserver.disconnect(); srpObserver = null; }
+    if (srpClickHandler) {
+      document.removeEventListener('click', srpClickHandler, true);
+      srpClickHandler = null;
+    }
+    if (srpKeyHandler) {
+      document.removeEventListener('keydown', srpKeyHandler, true);
+      srpKeyHandler = null;
+    }
+    lastStreamEndTs = 0;
+    console.log(TAG, 'send race protection stopped');
+  }
+
+  // ============================================================
   // BOOTSTRAP
   // ============================================================
 
@@ -294,6 +458,10 @@
     applyFontCSS(cachedSettings, cachedFonts);
     if (cachedSettings.modelAutoFix) startModelGuard();
     else stopModelGuard();
+    if (cachedSettings.sendRaceProtection) startSendRaceProtection();
+    else stopSendRaceProtection();
+    applyThinkingEffort(cachedSettings);
+    if (InPageUI) InPageUI.start();
     if (Translator) {
       if (cachedSettings.uiTranslate) {
         Translator.start({ logUntranslated: !!cachedSettings.uiTranslateDebug });

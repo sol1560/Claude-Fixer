@@ -50,6 +50,25 @@
     "message": "Keeps Opus 4.6 Extended Thinking selected even when claude.ai tries to revert to plain Opus 4.6 on send."
   },
 
+  "sendRaceProtectionLabel": {
+    "message": "Prevent swallowing last reply"
+  },
+  "sendRaceProtectionHint": {
+    "message": "Briefly blocks sends for 800 ms after Claude finishes streaming, to avoid a race where the last assistant message gets lost if you reply immediately."
+  },
+
+  "thinkingEffortLabel": {
+    "message": "Thinking effort"
+  },
+  "thinkingEffortHint": {
+    "message": "Override the thinking budget (budget_tokens) for Extended Thinking. Only affects messages sent while Extended Thinking is selected. \"Default\" leaves the payload untouched."
+  },
+  "effortDefault": { "message": "Default" },
+  "effortLow":     { "message": "Low (2K)" },
+  "effortMedium":  { "message": "Medium (10K)" },
+  "effortHigh":    { "message": "High (40K)" },
+  "effortMax":     { "message": "Max (128K)" },
+
   "uiTranslateLabel": {
     "message": "Translate UI to 中文"
   },

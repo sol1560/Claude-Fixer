@@ -124,6 +124,16 @@ button.danger {
   margin-top: 6px;
 }
 
+select {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  margin-left: auto;
+}
+
 .primary-btn {
   display: inline-block;
   background: var(--accent);

@@ -26,10 +26,17 @@
         "src/font-css.js",
         "src/font-probe.js",
         "src/i18n-zh.js",
+        "src/in-page-ui.js",
         "src/content.js"
       ],
       "run_at": "document_start",
       "all_frames": false
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["src/injected.js"],
+      "matches": ["*://claude.ai/*"]
     }
   ],
   "action": {

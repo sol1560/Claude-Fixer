@@ -47,6 +47,8 @@
 
     $('fontFix').checked = settings.fontFix;
     $('modelAutoFix').checked = settings.modelAutoFix;
+    $('sendRaceProtection').checked = settings.sendRaceProtection;
+    $('thinkingEffort').value = settings.thinkingEffort || 'default';
     $('uiTranslate').checked = settings.uiTranslate;
     $('uiTranslateDebug').checked = settings.uiTranslateDebug;
     $('modeAnthropic').checked = settings.fontMode === 'anthropic-serif';
@@ -65,6 +67,18 @@
 
     $('modelAutoFix').addEventListener('change', async (e) => {
       await Storage.setSettings({ modelAutoFix: e.target.checked });
+      await broadcastReload();
+      refresh();
+    });
+
+    $('sendRaceProtection').addEventListener('change', async (e) => {
+      await Storage.setSettings({ sendRaceProtection: e.target.checked });
+      await broadcastReload();
+      refresh();
+    });
+
+    $('thinkingEffort').addEventListener('change', async (e) => {
+      await Storage.setSettings({ thinkingEffort: e.target.value });
       await broadcastReload();
       refresh();
     });
